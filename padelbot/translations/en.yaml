@@ -1,0 +1,19 @@
+configuration:
+  groep_naam:
+    name: WhatsApp group name
+    description: Exactly as the group is named in WhatsApp.
+  tijdstip:
+    name: Message time
+    description: Time of the Tuesday, Wednesday and Thursday messages (e.g. 18:00).
+  tijdzone:
+    name: Time zone
+    description: Keep Europe/Brussels.
+  melding_service:
+    name: Admin notifications
+    description: Home Assistant action for alerts, e.g. persistent_notification.create or notify.mobile_app_your_phone.
+  bot_telefoonnummer:
+    name: Bot phone number (optional)
+    description: Fill in to link with a pairing code instead of a QR code.
+  laatste_herlading:
+    name: Last eSIM top-up (optional)
+    description: Date of the last top-up (YYYY-MM-DD). The bot reminds you a month before the number expires.
