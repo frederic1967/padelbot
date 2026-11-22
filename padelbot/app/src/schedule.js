@@ -80,9 +80,9 @@ export function formatShortNl(dateStr) {
 /** Tijdstippen van de berichten rond een speeldag. */
 export function planFor(matchDate, tijdstip) {
   return {
-    announce: { date: addDays(matchDate, -8), time: tijdstip }, // dinsdag
-    status: { date: addDays(matchDate, -7), time: tijdstip },   // woensdag
-    reminder: { date: addDays(matchDate, -6), time: tijdstip }, // donderdag
+    announce: { date: addDays(matchDate, -9), time: tijdstip }, // maandag, 9 dagen vooraf
+    status: { date: addDays(matchDate, -8), time: tijdstip },   // dinsdag, 8 dagen vooraf
+    eve: { date: addDays(matchDate, -1), time: tijdstip },      // dag vóór de wedstrijd
     finalize: { date: matchDate, time: '23:00' }                // speeldag, 's avonds
   };
 }

@@ -57,11 +57,10 @@ async function renderPage({ wa, bot, config }) {
       parts.push(
         `<p><b>Volgende wedstrijd:</b> ${esc(formatDateNl(match.date))}<br>` +
         `<b>Team:</b> ${names.length ? esc(listNl(names)) : 'nog niemand'}${team.complete ? ' ✅' : ` (nog ${team.missing} nodig)`}<br>` +
-        `<b>Reserves:</b> ${team.reserves.length ? esc(listNl(team.reserves.map((p) => bot.displayName(p)))) : '–'}<br>` +
-        `<b>Terrein:</b> ${match.reservedBy ? `gereserveerd door ${esc(match.reservedBy)}` : 'nog niet gereserveerd'}</p>`
+        `<b>Reserves:</b> ${team.reserves.length ? esc(listNl(team.reserves.map((p) => bot.displayName(p)))) : '–'}</p>`
       );
     } else {
-      parts.push('<p>Er is nu geen wedstrijd aangekondigd. De volgende aankondiging volgt op de dinsdag, 8 dagen voor de speeldag, om ' + esc(config.tijdstip) + '.</p>');
+      parts.push('<p>Er is nu geen wedstrijd aangekondigd. De volgende aankondiging volgt op de maandag, 9 dagen voor de speeldag, om ' + esc(config.tijdstip) + '.</p>');
     }
   }
   if (s.error) parts.push(`<p class="err"><b>Let op:</b> ${esc(s.error)}</p>`);

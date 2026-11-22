@@ -18,20 +18,20 @@ test('volgende speeldag', () => {
   assert.equal(nextMatchDate('2026-12-17'), '2027-01-06'); // over de jaarwissel
 });
 
-test('planning: dinsdag, woensdag, donderdag vooraf', () => {
+test('planning: maandag en dinsdag vooraf, herhaling de dag ervoor', () => {
   const p = planFor('2026-12-02', '18:00');
-  assert.deepEqual(p.announce, { date: '2026-11-24', time: '18:00' });
-  assert.equal(formatDateNl(p.announce.date), 'dinsdag 24 november');
-  assert.equal(formatDateNl(p.status.date), 'woensdag 25 november');
-  assert.equal(formatDateNl(p.reminder.date), 'donderdag 26 november');
+  assert.deepEqual(p.announce, { date: '2026-11-23', time: '18:00' });
+  assert.equal(formatDateNl(p.announce.date), 'maandag 23 november');
+  assert.equal(formatDateNl(p.status.date), 'dinsdag 24 november');
+  assert.equal(formatDateNl(p.eve.date), 'dinsdag 1 december');
   assert.equal(formatDateNl('2026-12-02'), 'woensdag 2 december');
 });
 
-test('de aankondiging valt altijd op een dinsdag', () => {
+test('de aankondiging valt altijd op een maandag', () => {
   for (let y = 2026; y <= 2028; y++) {
     for (let m = 1; m <= 12; m++) {
       for (const d of matchDatesInMonth(y, m)) {
-        assert.match(formatDateNl(planFor(d, '18:00').announce.date), /^dinsdag /);
+        assert.match(formatDateNl(planFor(d, '18:00').announce.date), /^maandag /);
       }
     }
   }

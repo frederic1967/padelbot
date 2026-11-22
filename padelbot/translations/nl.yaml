@@ -4,7 +4,7 @@ configuration:
     description: Exact zoals de groep in WhatsApp heet. Begin met de naam van je testgroep.
   tijdstip:
     name: Tijdstip van de berichten
-    description: Uur voor de berichten op dinsdag, woensdag en donderdag (bv. 18:00).
+    description: Uur voor de berichten op maandag, dinsdag en de dag vóór de wedstrijd (bv. 18:00).
   tijdzone:
     name: Tijdzone
     description: Laat op Europe/Brussels staan.

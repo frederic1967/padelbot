@@ -7,10 +7,11 @@ De Padelbot organiseert de padelwedstrijden van jullie WhatsApp-groep. We spelen
 
 | Wanneer | Bericht in de groep |
 |---|---|
-| Dinsdag, 8 dagen vooraf, 18:00 | Aankondiging, overzicht van wie hoeveel keer meespeelde (vorige 6 wedstrijden) en een peiling ✅ Ja / ❌ Nee |
-| Woensdag, 7 dagen vooraf, 18:00 | Het team staat vast (en "Wie reserveert het terrein?"), of er ontbreken nog spelers |
-| Donderdag, 6 dagen vooraf, 18:00 | Alleen als het team niet volledig is: één herinnering |
-| Op elk moment | Team volledig, iemand haakt af, een reserve schuift door |
+| Maandag, 9 dagen vooraf, 18:00 | Aankondiging, overzicht van wie hoeveel keer meespeelde (vorige 6 wedstrijden) en een peiling ✅ Ja / ❌ Nee |
+| Bij elke stem | Eén regel, bv. "✅ Jan kan spelen (3/4)" of "❌ An kan niet" |
+| Zodra er 4 ✅ zijn | "✅ Piet kan spelen (4/4) – het team voor … staat vast: …" |
+| Dinsdag, 8 dagen vooraf, 18:00 | Alleen als het team nog niet volledig is: wie ontbreekt, met de stand. Daarna geen herinneringen meer |
+| De dag vóór de wedstrijd, 18:00 | Herhaling: "🎾 Morgen padel! Op … spelen: …" |
 
 - De **eerste 4** die ✅ stemmen, spelen. Wie later ✅ stemt, staat op de **reservelijst**.
 - Zet iemand van het team zijn stem op ❌, dan schuift de eerste reserve automatisch door.
@@ -23,9 +24,8 @@ De Padelbot organiseert de padelwedstrijden van jullie WhatsApp-groep. We spelen
 |---|---|
 | `!gast Marc` | Gastspeler toevoegen |
 | `!gast weg Marc` | Gastspeler verwijderen |
-| `!gereserveerd` | Melden dat het terrein gereserveerd is |
 | `!geen` | De wedstrijd gaat niet door |
-| `!status` | Stand: wie speelt, reserves, wie niet kan, wie nog niet antwoordde, terrein |
+| `!status` | Stand: wie speelt, reserves, wie niet kan, wie nog niet antwoordde |
 | `!naam Jan` | Je naam in de berichten instellen |
 | `!historiek` | Alle vorige wedstrijden |
 | `!help` | Lijst met commando's |
@@ -53,8 +53,8 @@ dan extra commando's om de planning meteen uit te voeren:
 | Commando | Wat het doet |
 |---|---|
 | `!test aankondigen` | Aankondiging en peiling nu, voor de volgende vrije speeldag |
-| `!test woensdag` | Het bericht van woensdag nu |
-| `!test donderdag` | De herinnering van donderdag nu |
+| `!test dinsdag` | Het bericht van dinsdag nu (alleen als het team niet volledig is) |
+| `!test herhaling` | De herhaling van de dag vóór de wedstrijd nu |
 | `!test afsluiten` | De wedstrijd nu afsluiten (komt in de historiek) |
 | `!test wissen` | Alle wedstrijden en de historiek wissen; de ledenlijst blijft |
 

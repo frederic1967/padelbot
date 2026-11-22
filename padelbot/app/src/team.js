@@ -41,7 +41,7 @@ export function applyVote(yesOrder, personId, saysYes) {
  * Vergelijk het team voor en na een wijziging en geef de meldingen terug.
  * `name(id)` geeft de naam van een groepslid; gasten zijn al namen.
  */
-export function describeChange(before, after, { name, dateText, reservedBy }) {
+export function describeChange(before, after, { name, dateText }) {
   const msgs = [];
   const teamNames = (t) => [...t.members.map(name), ...t.guests.map((g) => `${g} (gast)`)];
   const inList = (arr, x) => arr.includes(x);
@@ -52,7 +52,7 @@ export function describeChange(before, after, { name, dateText, reservedBy }) {
   const inGuests = after.guests.filter((g) => !inList(before.guests, g));
 
   if (!before.complete && after.complete) {
-    msgs.push(confirmText(teamNames(after), dateText, reservedBy));
+    msgs.push(confirmText(teamNames(after), dateText));
   } else if (before.complete && after.complete) {
     const outs = [...outMembers.map(name), ...outGuests.map((g) => `${g} (gast)`)];
     const ins = [...inMembers.map(name), ...inGuests.map((g) => `${g} (gast)`)];
@@ -87,11 +87,8 @@ export function describeChange(before, after, { name, dateText, reservedBy }) {
   return msgs;
 }
 
-export function confirmText(names, dateText, reservedBy) {
-  const tail = reservedBy
-    ? `Het terrein is gereserveerd door ${reservedBy}.`
-    : 'Wie reserveert het terrein? Typ !gereserveerd als het geregeld is.';
-  return `✅ Het team voor ${dateText} staat vast: ${listNl(names)}.\n${tail}`;
+export function confirmText(names, dateText) {
+  return `✅ Het team voor ${dateText} staat vast: ${listNl(names)}.`;
 }
 
 export function missingText(n) {

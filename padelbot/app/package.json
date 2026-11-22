@@ -1,6 +1,6 @@
 {
   "name": "padelbot",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "description": "WhatsApp-assistent voor de padelgroep (Home Assistant App)",
   "type": "module",

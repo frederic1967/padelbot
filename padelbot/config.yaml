@@ -1,5 +1,5 @@
 name: "Padelbot"
-version: "0.1.4"
+version: "0.1.5"
 slug: "padelbot"
 description: "WhatsApp-assistent voor de padelgroep: aankondiging, peiling, team en historiek"
 url: "https://github.com/frederic1967/padelbot"

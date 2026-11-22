@@ -1,5 +1,14 @@
 # Wijzigingen
 
+## 0.1.5
+
+- Aankondiging op maandag, 9 dagen vooraf (was dinsdag).
+- Eén regel per stem in de groep; zodra er 4 ✅ zijn meteen de bevestiging.
+- Dinsdag (8 dagen vooraf) alleen een bericht als het team niet volledig is; daarna geen herinneringen meer.
+- Nieuw: herhaling van wie speelt op de dag vóór de wedstrijd.
+- Alles over de reservatie van het terrein verwijderd (ook !gereserveerd).
+- Testcommando's: !test dinsdag en !test herhaling (vervangen !test woensdag en !test donderdag).
+
 ## 0.1.4
 
 - Nieuw overzicht "Stand": wie speelt, reserves, wie niet kan, wie nog niet geantwoord heeft en

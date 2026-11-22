@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import {
   addDays, addMonths, atOrAfter, daysBetween, formatDateNl, formatShortNl, localNow, nextMatchDate, planFor
 } from './schedule.js';
-import { applyVote, computeTeam, confirmText, describeChange, listNl, missingText } from './team.js';
+import { applyVote, computeTeam, describeChange, listNl, missingText } from './team.js';
 
 export const YES = '✅ Ja';
 export const NO = '❌ Nee';
@@ -130,8 +130,7 @@ export class Bot {
     this.store.save();
     const msgs = describeChange(before, after, {
       name: (pid) => this.displayName(pid),
-      dateText: formatDateNl(match.date),
-      reservedBy: match.reservedBy
+      dateText: formatDateNl(match.date)
     });
     for (const m of msgs) await this.wa.sendText(m);
   }
@@ -145,9 +144,9 @@ export class Bot {
       poll: null,
       yesOrder: [],
       guests: [],
-      reservedBy: null,
+      votes: {},
       // Te laat aangekondigd (bv. Pi stond uit)? Dan geen dubbele berichten achteraf.
-      flags: { announced: false, status: atOrAfter(now, plan.status), reminder: atOrAfter(now, plan.reminder) },
+      flags: { announced: false, status: atOrAfter(now, plan.status), eve: atOrAfter(now, plan.eve) },
       team: null
     };
     this.state.matches[date] = match;
@@ -169,28 +168,32 @@ export class Bot {
     }
   }
 
+  /** Dinsdag (8 dagen vooraf): alleen een bericht als het team nog niet volledig is. */
   async sendStatus(match) {
     const team = computeTeam(match);
-    const dateText = formatDateNl(match.date);
-    if (team.complete) {
-      await this.wa.sendText(confirmText(this.teamNames(team), dateText, match.reservedBy));
-    } else {
-      await this.wa.sendText(
-        `⚠️ Voor ${dateText} ${missingText(team.missing)}. Wie kan er nog? ` +
-        'Stem in de peiling hierboven, of voeg een gast toe met !gast naam.\n\n' +
-        this.standText(match)
-      );
-    }
-  }
-
-  async sendReminder(match) {
-    const team = computeTeam(match);
-    if (team.complete) return;
+    if (team.complete) return false;
     await this.wa.sendText(
-      `⏰ Herinnering: voor ${formatDateNl(match.date)} ${missingText(team.missing)}. ` +
-      'Stem in de peiling, of voeg een gast toe met !gast naam.\n\n' +
+      `⚠️ Voor ${formatDateNl(match.date)} ${missingText(team.missing)}. Wie kan er nog? ` +
+      'Stem in de peiling hierboven, of voeg een gast toe met !gast naam.\n\n' +
       this.standText(match)
     );
+    return true;
+  }
+
+  /** De dag vóór de wedstrijd: herhaling van wie er speelt. */
+  async sendEve(match) {
+    const team = computeTeam(match);
+    const dateText = formatDateNl(match.date);
+    const names = this.teamNames(team);
+    if (team.complete) {
+      await this.wa.sendText(`🎾 Morgen padel! Op ${dateText} spelen: ${listNl(names)}.`);
+    } else {
+      await this.wa.sendText(
+        `⚠️ Morgen padel, maar voor ${dateText} ${missingText(team.missing)}. ` +
+        `Nu spelen: ${names.length ? listNl(names) : 'nog niemand'}. ` +
+        'Voeg een gast toe met !gast naam, of typ !geen als de wedstrijd niet doorgaat.'
+      );
+    }
   }
 
   /** Groepsleden die nog niet in de peiling stemden. */
@@ -199,7 +202,7 @@ export class Bot {
     return this.activeMembers().filter((pid) => !(pid in votes) && !match.yesOrder.includes(pid));
   }
 
-  /** Overzicht: wie speelt, reserves, wie niet kan, wie nog niet antwoordde, terrein. */
+  /** Overzicht: wie speelt, reserves, wie niet kan, wie nog niet antwoordde. */
   standText(match) {
     const team = computeTeam(match);
     const names = (ids) => ids.map((p) => this.displayName(p));
@@ -213,8 +216,7 @@ export class Bot {
       `✅ Speelt: ${list(this.teamNames(team))}${team.complete ? '' : ` (nog ${team.missing} nodig)`}`,
       `🔁 Reserve: ${list(reserves)}`,
       `❌ Kan niet: ${list(names(no))}`,
-      `❓ Nog niet geantwoord: ${list(names(this.notAnswered(match)))}`,
-      `🎾 Terrein: ${match.reservedBy ? `gereserveerd door ${match.reservedBy}` : 'nog niet gereserveerd'}`
+      `❓ Nog niet geantwoord: ${list(names(this.notAnswered(match)))}`
     ].join('\n');
   }
 
@@ -237,7 +239,7 @@ export class Bot {
 
     let match = this.openMatch();
 
-    // 2. Volgende wedstrijd aankondigen op de dinsdag, 8 dagen vooraf.
+    // 2. Volgende wedstrijd aankondigen op de maandag, 9 dagen vooraf.
     if (!match) {
       let date = nextMatchDate(now.date);
       if (this.state.matches[date]) date = nextMatchDate(addDays(date, 1));
@@ -252,18 +254,19 @@ export class Bot {
     // Aankondiging of peiling mislukt (bv. verbinding even weg)? Opnieuw proberen.
     await this.ensureAnnounced(match);
 
-    // 3. Woensdag: bevestiging of "er ontbreken nog spelers".
+    // 3. Dinsdag (8 dagen vooraf): alleen als het team nog niet volledig is.
     const plan = planFor(match.date, this.config.tijdstip);
     if (!match.flags.status && atOrAfter(now, plan.status)) {
       match.flags.status = true;
       this.store.save();
-      await this.sendStatus(match);
+      // Pi stond uit tot na de herhaling? Dan is het dinsdagbericht achterhaald.
+      if (!atOrAfter(now, plan.eve)) await this.sendStatus(match);
     }
-    // 4. Donderdag: één herinnering als het team niet volledig is.
-    if (!match.flags.reminder && atOrAfter(now, plan.reminder)) {
-      match.flags.reminder = true;
+    // 4. De dag vóór de wedstrijd: herhaling van wie er speelt.
+    if (!match.flags.eve && atOrAfter(now, plan.eve)) {
+      match.flags.eve = true;
       this.store.save();
-      await this.sendReminder(match);
+      await this.sendEve(match);
     }
     await this.checkTopup(now);
   }
@@ -283,15 +286,51 @@ export class Bot {
     const match = this.openMatch();
     if (!match || !match.poll || match.poll.id !== pollId) return; // oude peiling
     const pid = this.upsertPerson(senderIds, pushName);
-    const saysYes = selectedHashes.includes(YES_HASH);
-    const saysNo = selectedHashes.includes(NO_HASH);
-    await this.changeMatch(match, (m) => {
-      m.yesOrder = applyVote(m.yesOrder, pid, saysYes);
-      m.votes = m.votes || {};
-      if (saysYes) m.votes[pid] = 'yes';
-      else if (saysNo) m.votes[pid] = 'no';
-      else delete m.votes[pid]; // stem ingetrokken = nog niet geantwoord
-    });
+    const vote = selectedHashes.includes(YES_HASH) ? 'yes' : selectedHashes.includes(NO_HASH) ? 'no' : null;
+    match.votes = match.votes || {};
+    const prev = match.votes[pid] || (match.yesOrder.includes(pid) ? 'yes' : null);
+    if (prev === vote) return; // niets veranderd
+
+    const before = computeTeam(match);
+    match.yesOrder = applyVote(match.yesOrder, pid, vote === 'yes');
+    if (vote) match.votes[pid] = vote;
+    else delete match.votes[pid]; // stem ingetrokken = nog niet geantwoord
+    const after = computeTeam(match);
+    this.store.save();
+    await this.wa.sendText(this.voteLine(match, pid, vote, before, after));
+  }
+
+  /** Eén regel per stem, zoals in een gewone chat. */
+  voteLine(match, pid, vote, before, after) {
+    const name = this.displayName(pid);
+    const size = (t) => t.members.length + t.guests.length;
+    const teamNames = (t) => [...t.members.map((p) => this.displayName(p)), ...t.guests.map((g) => `${g} (gast)`)];
+    const joined = teamNames(after).filter((n) => !teamNames(before).includes(n) && n !== name);
+    const left = teamNames(before).filter((n) => !teamNames(after).includes(n) && n !== name);
+
+    if (vote === 'yes') {
+      if (!after.members.includes(pid)) {
+        return `✅ ${name} kan spelen – ${after.reserves.indexOf(pid) + 1}e reserve`;
+      }
+      let line = `✅ ${name} kan spelen (${size(after)}/4)`;
+      if (left.length) line += ` – ${listNl(left)} ${left.length > 1 ? 'zijn' : 'is'} niet meer nodig`;
+      if (after.complete && !before.complete) {
+        line += ` – het team voor ${formatDateNl(match.date)} staat vast: ${listNl(teamNames(after))}.`;
+      }
+      return line;
+    }
+
+    const wasInTeam = before.members.includes(pid);
+    const head = vote === 'no'
+      ? `❌ ${name} ${wasInTeam || before.reserves.includes(pid) ? 'kan niet meer' : 'kan niet'}`
+      : `↩️ ${name}: stem ingetrokken`;
+    if (!wasInTeam) return head;
+    if (joined.length) {
+      let line = `${head} – ${listNl(joined)} ${joined.length > 1 ? 'spelen' : 'speelt'} mee`;
+      if (after.complete && !before.complete) line += ` – het team staat vast: ${listNl(teamNames(after))}.`;
+      return line;
+    }
+    return `${head} – ${after.missing === 1 ? 'nog 1 speler nodig' : `nog ${after.missing} spelers nodig`}`;
   }
 
   // ---------------------------------------------------------------- commando's
@@ -336,12 +375,6 @@ export class Bot {
         else head = `${guest} (gast) speelt mee. Voor ${formatDateNl(match.date)} ${missingText(after.missing)}.`;
         return `${head}\n\n${this.standText(match)}`;
       }
-      case 'gereserveerd': {
-        if (!match) return noMatch;
-        match.reservedBy = this.displayName(pid);
-        this.store.save();
-        return `✅ Terrein gereserveerd door ${match.reservedBy}.`;
-      }
       case 'geen': {
         if (!match) return noMatch;
         match.status = 'cancelled';
@@ -382,18 +415,17 @@ export class Bot {
         await this.announce(date);
         return null;
       }
-      case 'woensdag':
+      case 'dinsdag':
         if (!match) return noMatch;
         match.flags.status = true;
         this.store.save();
-        await this.sendStatus(match);
+        if (!(await this.sendStatus(match))) return 'Test: het team is volledig, dus op dinsdag komt er geen bericht.';
         return null;
-      case 'donderdag':
+      case 'herhaling':
         if (!match) return noMatch;
-        match.flags.reminder = true;
+        match.flags.eve = true;
         this.store.save();
-        if (computeTeam(match).complete) return 'Test: het team is volledig, dus op donderdag komt er geen herinnering.';
-        await this.sendReminder(match);
+        await this.sendEve(match);
         return null;
       case 'afsluiten': {
         if (!match) return noMatch;
@@ -468,7 +500,6 @@ export const HELP = [
   'Commando\'s:',
   '• !gast Marc – gastspeler toevoegen',
   '• !gast weg Marc – gastspeler verwijderen',
-  '• !gereserveerd – het terrein is gereserveerd',
   '• !geen – de wedstrijd gaat niet door',
   '• !status – stand van de volgende wedstrijd',
   '• !naam Jan – je naam in de berichten instellen',
@@ -479,8 +510,8 @@ export const HELP = [
 export const TEST_HELP = [
   'Testcommando\'s (Test mode staat aan):',
   '• !test aankondigen – aankondiging en peiling nu',
-  '• !test woensdag – bericht van woensdag nu',
-  '• !test donderdag – herinnering van donderdag nu',
+  '• !test dinsdag – bericht van dinsdag nu (als het team niet volledig is)',
+  '• !test herhaling – herhaling van de dag vóór de wedstrijd nu',
   '• !test afsluiten – wedstrijd nu afsluiten',
   '• !test wissen – alle wedstrijden en historiek wissen'
 ].join('\n');
