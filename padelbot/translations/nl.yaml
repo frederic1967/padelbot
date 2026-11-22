@@ -24,3 +24,6 @@ configuration:
   geldigheid_maanden:
     name: Geldigheid van de eSIM (maanden)
     description: Hoe lang het nummer actief blijft na een herlading. DIGI prepaid = 9 maanden.
+  uitgebreide_log:
+    name: Uitgebreide log
+    description: Zet aan om problemen op te sporen. Schrijft veel technische details in de log; zet daarna weer uit.

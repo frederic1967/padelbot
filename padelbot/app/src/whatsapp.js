@@ -18,8 +18,8 @@ export class WhatsApp {
    * @param {object} opts.handlers { onReady, onVote(vote), onText(msg), onMembersChanged, pollSecret(id), notify(title, msg) }
    * @param {object} opts.log
    */
-  constructor({ authDir, groupName, pairingNumber, handlers, log }) {
-    Object.assign(this, { authDir, groupName, pairingNumber, handlers, log });
+  constructor({ authDir, groupName, pairingNumber, handlers, log, debug = false }) {
+    Object.assign(this, { authDir, groupName, pairingNumber, handlers, log, debug });
     this.sock = null;
     this.groupJid = null;
     this.status = { connection: 'starten', qr: null, pairingCode: null, me: null, group: null, error: null };
@@ -43,7 +43,8 @@ export class WhatsApp {
       auth: state,
       version,
       browser: Browsers.ubuntu('Chrome'),
-      logger: pino({ level: 'warn' }),
+      // Met "uitgebreide log" aan schrijft ook de WhatsApp-koppeling (Baileys) alle details weg.
+      logger: pino({ level: this.debug ? 'debug' : 'warn' }),
       markOnlineOnConnect: false,
       syncFullHistory: false
     });
@@ -79,11 +80,13 @@ export class WhatsApp {
       this.disconnectedSince = null;
       this.alertSent = false;
       await this.findGroup();
+      this.log.info(`Verbonden als ${this.meIds().join(' / ')}; padelgroep: ${this.groupJid || 'NIET GEVONDEN'}`);
       await this.syncMembers();
       await this.handlers.onReady();
     }
     if (connection === 'close') {
       const code = lastDisconnect?.error?.output?.statusCode;
+      this.log.info(`Verbinding gesloten (code ${code ?? 'onbekend'}), opnieuw verbinden`);
       this.status.connection = 'verbroken';
       this.disconnectedSince ??= Date.now();
       if (code === DisconnectReason.loggedOut) {
@@ -158,9 +161,17 @@ export class WhatsApp {
 
   async onMessages({ messages, type }) {
     for (const msg of messages) {
-      if (!msg.key?.remoteJid || msg.key.remoteJid !== this.groupJid || !isJidGroup(msg.key.remoteJid)) continue;
+      const chat = msg.key?.remoteJid || '?';
+      const inGroup = chat === this.groupJid && isJidGroup(chat);
       const content = normalizeMessageContent(msg.message);
-      if (!content) continue;
+      const kind = content ? Object.keys(content).filter((k) => k !== 'messageContextInfo').join(',') || 'leeg'
+        : `GEEN INHOUD (stub ${msg.messageStubType ?? '-'} ${msg.messageStubParameters?.[0] ?? ''})`;
+      // Diagnose: elk binnenkomend bericht kort loggen, zonder de inhoud.
+      this.log.info(
+        `Bericht ontvangen: ${inGroup ? 'padelgroep' : `andere chat ${chat}`}, type ${type}, ` +
+        `van ${msg.key?.fromMe ? 'de bot zelf' : (msg.key?.participant || chat)}, soort ${kind}`
+      );
+      if (!inGroup || !content) continue;
       const senderIds = [msg.key.participant, msg.key.participantAlt].filter(Boolean).map((j) => jidNormalizedUser(j));
 
       if (content.pollUpdateMessage) {

@@ -38,10 +38,16 @@ const wa = new WhatsApp({
     onMembersChanged: (participants) => serial(() => bot.syncMembers(participants)),
     onVote: (vote) => serial(() => bot.handleVote(vote)),
     onText: (msg) => serial(async () => {
+      const isCommand = msg.text.trim().startsWith('!');
+      if (isCommand) log.info(`Commando ${msg.text.trim().split(/\s+/)[0]} van ${msg.pushName || msg.senderIds[0]}`);
       const reply = await bot.handleCommand(msg);
-      if (reply) await wa.sendText(reply);
+      if (reply) {
+        await wa.sendText(reply);
+        log.info('Antwoord verstuurd');
+      }
     })
-  }
+  },
+  debug: !!config.uitgebreide_log
 });
 
 bot = new Bot({ store, config, wa, notify, log });

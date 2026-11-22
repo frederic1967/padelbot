@@ -20,3 +20,6 @@ configuration:
   geldigheid_maanden:
     name: eSIM validity (months)
     description: How long the number stays active after a top-up. DIGI prepaid = 9 months.
+  uitgebreide_log:
+    name: Detailed log
+    description: Turn on to troubleshoot. Writes many technical details to the log; turn off again afterwards.
