@@ -1,5 +1,11 @@
 # Wijzigingen
 
+## 0.1.4
+
+- Nieuw overzicht "Stand": wie speelt, reserves, wie niet kan, wie nog niet geantwoord heeft en
+  het terrein. Bij !gast, !status en in de berichten van woensdag en donderdag als er spelers ontbreken.
+- De bot onthoudt nu ook de ❌-stemmen.
+
 ## 0.1.3
 
 - Testmodus (instelling "Test mode"): met !test aankondigen, !test woensdag, !test donderdag,

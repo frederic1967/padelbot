@@ -127,28 +127,44 @@ test('te weinig spelers: woensdag melding, donderdag één herinnering, gasten',
   t.take();
   await t.vote('Jan', true);
   await t.vote('Els', true);
+  await t.vote('An', false);
 
   t.at('2026-11-25T18:00');
   await t.bot.tick();
-  assert.deepEqual(t.take(), ['⚠️ Voor woensdag 2 december ontbreken nog 2 spelers. Wie kan er nog? Stem in de peiling hierboven, of voeg een gast toe met !gast naam.']);
+  assert.deepEqual(t.take(), [
+    '⚠️ Voor woensdag 2 december ontbreken nog 2 spelers. Wie kan er nog? Stem in de peiling hierboven, of voeg een gast toe met !gast naam.\n\n' +
+    '📋 Stand voor woensdag 2 december\n' +
+    '✅ Speelt: Jan en Els (nog 2 nodig)\n' +
+    '🔁 Reserve: –\n' +
+    '❌ Kan niet: An\n' +
+    '❓ Nog niet geantwoord: Tom, Piet en Frederic\n' +
+    '🎾 Terrein: nog niet gereserveerd'
+  ]);
 
   t.at('2026-11-26T18:00');
   await t.bot.tick();
-  assert.deepEqual(t.take(), ['⏰ Herinnering: voor woensdag 2 december ontbreken nog 2 spelers. Stem in de peiling, of voeg een gast toe met !gast naam.']);
+  const [reminder] = t.take();
+  assert.match(reminder, /^⏰ Herinnering: voor woensdag 2 december ontbreken nog 2 spelers\. Stem in de peiling, of voeg een gast toe met !gast naam\.\n\n📋 Stand/);
 
   t.at('2026-11-27T18:00');
   await t.bot.tick();
   assert.equal(t.take().length, 0, 'daarna geen herinneringen meer');
 
-  assert.equal(await t.cmd('Jan', '!gast Marc'), 'Marc (gast) speelt mee. Voor woensdag 2 december ontbreekt nog 1 speler.');
-  assert.equal(await t.cmd('Jan', '!gast Lien'), null);
+  const r1 = await t.cmd('Jan', '!gast Marc');
+  assert.match(r1, /^Marc \(gast\) speelt mee\. Voor woensdag 2 december ontbreekt nog 1 speler\.\n\n📋 Stand/);
+  assert.match(r1, /✅ Speelt: Jan, Els en Marc \(gast\) \(nog 1 nodig\)/);
+  const r2 = await t.cmd('Jan', '!gast Lien');
+  assert.match(r2, /^Lien \(gast\) speelt mee\. Het team is volledig\.\n\n📋 Stand/);
+  assert.match(r2, /✅ Speelt: Jan, Els, Marc \(gast\) en Lien \(gast\)\n/);
   assert.deepEqual(t.take(), ['✅ Het team voor woensdag 2 december staat vast: Jan, Els, Marc (gast) en Lien (gast).\nWie reserveert het terrein? Typ !gereserveerd als het geregeld is.']);
 
   // Een groepslid stemt alsnog ja: voorrang op de gast
   await t.vote('Tom', true);
   assert.deepEqual(t.take(), ['🔄 Tom speelt mee, dus Lien (gast) is niet meer nodig.\nTeam voor woensdag 2 december: Jan, Els, Tom en Marc (gast).']);
 
-  assert.equal(await t.cmd('Jan', '!gast weg Marc'), 'Marc (gast) is van de lijst gehaald.');
+  const r3 = await t.cmd('Jan', '!gast weg Marc');
+  assert.match(r3, /^Marc \(gast\) is van de lijst gehaald\.\n\n📋 Stand/);
+  assert.match(r3, /❓ Nog niet geantwoord: Piet en Frederic/);
   assert.deepEqual(t.take(), ['🔄 Marc (gast) haakt af, Lien (gast) speelt mee.\nTeam voor woensdag 2 december: Jan, Els, Tom en Lien (gast).']);
 
   // Iemand haakt af zonder reserve
@@ -168,7 +184,7 @@ test('!geen, !naam, !status en onbekend commando', async () => {
   t.take();
   assert.equal(await t.cmd('Jan', '!naam Johnny'), '👍 Je naam is nu Johnny.');
   await t.vote('Jan', true);
-  assert.match(await t.cmd('Els', '!status'), /Team: Johnny\nEr ontbreken nog 3 spelers\./);
+  assert.match(await t.cmd('Els', '!status'), /✅ Speelt: Johnny \(nog 3 nodig\)\n🔁 Reserve: –\n❌ Kan niet: –\n❓ Nog niet geantwoord: Els/);
   assert.match(await t.cmd('Els', '!onzin'), /^Onbekend commando/);
   assert.equal(await t.cmd('Els', 'gewoon een bericht'), null);
   assert.equal(await t.cmd('Els', '!geen'), '❌ De wedstrijd van woensdag 2 december gaat niet door. Ze telt niet mee in het overzicht.');
@@ -278,4 +294,18 @@ test('testmodus: de planning meteen uitvoeren', async () => {
   // Na het wissen kondigt de echte planning gewoon aan
   await t.bot.tick();
   assert.match(t.take()[0], /woensdag 2 december/);
+});
+
+test('stand: nee-stem en ingetrokken stem', async () => {
+  const t = setup({ start: '2026-11-24T18:00' });
+  await t.members(['Jan', 'Els', 'Tom']);
+  await t.bot.tick();
+  t.take();
+  await t.vote('Els', false);
+  assert.match(await t.cmd('Jan', '!status'), /❌ Kan niet: Els\n❓ Nog niet geantwoord: Jan en Tom/);
+  await t.vote('Els', null); // stem ingetrokken
+  assert.match(await t.cmd('Jan', '!status'), /❌ Kan niet: –\n❓ Nog niet geantwoord: Jan, Els en Tom/);
+  // Een oude wedstrijd zonder "votes" (van vóór 0.1.4) blijft werken
+  delete t.bot.openMatch().votes;
+  assert.match(await t.cmd('Jan', '!status'), /❓ Nog niet geantwoord: Jan, Els en Tom/);
 });

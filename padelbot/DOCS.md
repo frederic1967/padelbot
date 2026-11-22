@@ -25,7 +25,7 @@ De Padelbot organiseert de padelwedstrijden van jullie WhatsApp-groep. We spelen
 | `!gast weg Marc` | Gastspeler verwijderen |
 | `!gereserveerd` | Melden dat het terrein gereserveerd is |
 | `!geen` | De wedstrijd gaat niet door |
-| `!status` | Stand van de volgende wedstrijd |
+| `!status` | Stand: wie speelt, reserves, wie niet kan, wie nog niet antwoordde, terrein |
 | `!naam Jan` | Je naam in de berichten instellen |
 | `!historiek` | Alle vorige wedstrijden |
 | `!help` | Lijst met commando's |

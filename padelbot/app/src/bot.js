@@ -8,6 +8,7 @@ import { applyVote, computeTeam, confirmText, describeChange, listNl, missingTex
 export const YES = '✅ Ja';
 export const NO = '❌ Nee';
 const YES_HASH = crypto.createHash('sha256').update(YES).digest('hex');
+const NO_HASH = crypto.createHash('sha256').update(NO).digest('hex');
 const OVERVIEW_MATCHES = 6;
 const TOPUP_THRESHOLDS = [30, 14, 3, 0];
 
@@ -176,7 +177,8 @@ export class Bot {
     } else {
       await this.wa.sendText(
         `⚠️ Voor ${dateText} ${missingText(team.missing)}. Wie kan er nog? ` +
-        'Stem in de peiling hierboven, of voeg een gast toe met !gast naam.'
+        'Stem in de peiling hierboven, of voeg een gast toe met !gast naam.\n\n' +
+        this.standText(match)
       );
     }
   }
@@ -186,8 +188,34 @@ export class Bot {
     if (team.complete) return;
     await this.wa.sendText(
       `⏰ Herinnering: voor ${formatDateNl(match.date)} ${missingText(team.missing)}. ` +
-      'Stem in de peiling, of voeg een gast toe met !gast naam.'
+      'Stem in de peiling, of voeg een gast toe met !gast naam.\n\n' +
+      this.standText(match)
     );
+  }
+
+  /** Groepsleden die nog niet in de peiling stemden. */
+  notAnswered(match) {
+    const votes = match.votes || {};
+    return this.activeMembers().filter((pid) => !(pid in votes) && !match.yesOrder.includes(pid));
+  }
+
+  /** Overzicht: wie speelt, reserves, wie niet kan, wie nog niet antwoordde, terrein. */
+  standText(match) {
+    const team = computeTeam(match);
+    const names = (ids) => ids.map((p) => this.displayName(p));
+    const list = (arr) => (arr.length ? listNl(arr) : '–');
+    const no = Object.entries(match.votes || {})
+      .filter(([pid, v]) => v === 'no' && this.state.people[pid]?.active)
+      .map(([pid]) => pid);
+    const reserves = [...names(team.reserves), ...team.spareGuests.map((g) => `${g} (gast)`)];
+    return [
+      `📋 Stand voor ${formatDateNl(match.date)}`,
+      `✅ Speelt: ${list(this.teamNames(team))}${team.complete ? '' : ` (nog ${team.missing} nodig)`}`,
+      `🔁 Reserve: ${list(reserves)}`,
+      `❌ Kan niet: ${list(names(no))}`,
+      `❓ Nog niet geantwoord: ${list(names(this.notAnswered(match)))}`,
+      `🎾 Terrein: ${match.reservedBy ? `gereserveerd door ${match.reservedBy}` : 'nog niet gereserveerd'}`
+    ].join('\n');
   }
 
   finalize(match) {
@@ -256,7 +284,14 @@ export class Bot {
     if (!match || !match.poll || match.poll.id !== pollId) return; // oude peiling
     const pid = this.upsertPerson(senderIds, pushName);
     const saysYes = selectedHashes.includes(YES_HASH);
-    await this.changeMatch(match, (m) => { m.yesOrder = applyVote(m.yesOrder, pid, saysYes); });
+    const saysNo = selectedHashes.includes(NO_HASH);
+    await this.changeMatch(match, (m) => {
+      m.yesOrder = applyVote(m.yesOrder, pid, saysYes);
+      m.votes = m.votes || {};
+      if (saysYes) m.votes[pid] = 'yes';
+      else if (saysNo) m.votes[pid] = 'no';
+      else delete m.votes[pid]; // stem ingetrokken = nog niet geantwoord
+    });
   }
 
   // ---------------------------------------------------------------- commando's
@@ -289,13 +324,17 @@ export class Bot {
         if (isRemove) {
           if (!existing) return `${guest} staat niet als gast op de lijst.`;
           await this.changeMatch(match, (m) => { m.guests = m.guests.filter((g) => g !== existing); });
-          return `${existing} (gast) is van de lijst gehaald.`;
+          return `${existing} (gast) is van de lijst gehaald.\n\n${this.standText(match)}`;
         }
         if (existing) return `${existing} staat al als gast op de lijst.`;
         const wasComplete = computeTeam(match).complete;
         await this.changeMatch(match, (m) => { m.guests.push(guest); });
-        if (wasComplete) return `Het team is al volledig. ${guest} (gast) staat klaar als reserve.`;
-        return computeTeam(match).complete ? null : `${guest} (gast) speelt mee. Voor ${formatDateNl(match.date)} ${missingText(computeTeam(match).missing)}.`;
+        const after = computeTeam(match);
+        let head;
+        if (wasComplete) head = `Het team is al volledig. ${guest} (gast) staat klaar als reserve.`;
+        else if (after.complete) head = `${guest} (gast) speelt mee. Het team is volledig.`;
+        else head = `${guest} (gast) speelt mee. Voor ${formatDateNl(match.date)} ${missingText(after.missing)}.`;
+        return `${head}\n\n${this.standText(match)}`;
       }
       case 'gereserveerd': {
         if (!match) return noMatch;
@@ -317,17 +356,9 @@ export class Bot {
         this.store.save();
         return `👍 Je naam is nu ${name}.`;
       }
-      case 'status': {
+      case 'status':
         if (!match) return noMatch;
-        const team = computeTeam(match);
-        const lines = [`🎾 Wedstrijd van ${formatDateNl(match.date)}`];
-        lines.push(`Team: ${team.members.length + team.guests.length ? listNl(this.teamNames(team)) : 'nog niemand'}`);
-        if (!team.complete) lines.push(`Er ${missingText(team.missing)}.`);
-        if (team.reserves.length) lines.push(`Reserves: ${listNl(team.reserves.map((p) => this.displayName(p)))}`);
-        if (team.spareGuests.length) lines.push(`Gasten in reserve: ${listNl(team.spareGuests)}`);
-        lines.push(match.reservedBy ? `Terrein gereserveerd door ${match.reservedBy}.` : 'Terrein: nog niet gereserveerd.');
-        return lines.join('\n');
-      }
+        return this.standText(match);
       case 'historiek':
         return this.historyText();
       case 'help':
