@@ -16,4 +16,7 @@ configuration:
     description: Fill in to link with a pairing code instead of a QR code.
   laatste_herlading:
     name: Last eSIM top-up (optional)
-    description: Date of the last top-up (YYYY-MM-DD). The bot reminds you a month before the number expires.
+    description: Date of activation or last top-up (YYYY-MM-DD). The bot reminds you 30, 14 and 3 days before the number expires.
+  geldigheid_maanden:
+    name: eSIM validity (months)
+    description: How long the number stays active after a top-up. DIGI prepaid = 9 months.

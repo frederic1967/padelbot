@@ -7,7 +7,8 @@ const DEFAULTS = {
   tijdzone: 'Europe/Brussels',
   melding_service: 'persistent_notification.create',
   bot_telefoonnummer: '',
-  laatste_herlading: ''
+  laatste_herlading: '',
+  geldigheid_maanden: 9 // DIGI prepaid: 9 maanden na activatie of laatste herlading
 };
 
 export function loadConfig(file = process.env.PADELBOT_OPTIONS || '/data/options.json') {

@@ -20,4 +20,7 @@ configuration:
       Handig als je Home Assistant op dezelfde telefoon bekijkt.
   laatste_herlading:
     name: Laatste herlading eSIM (optioneel)
-    description: Datum van de laatste herlading (JJJJ-MM-DD). De bot herinnert je een maand voor het nummer vervalt.
+    description: Datum van activatie of laatste herlading (JJJJ-MM-DD). De bot herinnert je 30, 14 en 3 dagen voor het nummer vervalt.
+  geldigheid_maanden:
+    name: Geldigheid van de eSIM (maanden)
+    description: Hoe lang het nummer actief blijft na een herlading. DIGI prepaid = 9 maanden.

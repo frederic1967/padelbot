@@ -216,8 +216,8 @@ test('late start (Pi stond uit): geen dubbele berichten', async () => {
 });
 
 test('herinnering om de eSIM te herladen', async () => {
-  const t = setup({ start: '2026-11-24T18:00', herlading: '2025-12-20' });
-  await t.bot.tick(); // vervalt op 2026-12-20: nog 26 dagen
+  const t = setup({ start: '2026-11-24T18:00', herlading: '2026-03-20' });
+  await t.bot.tick(); // DIGI: 9 maanden geldig, vervalt op 2026-12-20: nog 26 dagen
   assert.equal(t.notes.length, 1);
   assert.match(t.notes[0], /binnen 26 dagen/);
   await t.bot.tick();

@@ -54,9 +54,10 @@ in voor een pushmelding.
 
 ## eSIM herladen
 
-Vul bij **Laatste herlading eSIM** de datum van je laatste herlading in (bv. `2026-11-25`).
-De bot herinnert je 30, 14 en 3 dagen voor het nummer na een jaar zou vervallen. Pas na het
-herladen de datum aan en herstart de App.
+Vul bij **Laatste herlading eSIM** de datum van activatie of van je laatste herlading in
+(bv. `2026-11-22`). Een DIGI prepaid-nummer blijft 9 maanden actief na activatie of herlading
+(instelling **Geldigheid van de eSIM**). De bot herinnert je 30, 14 en 3 dagen voor het nummer
+vervalt. Herlaad dan met €5 via MyDIGI, pas de datum aan en herstart de App.
 
 ## Gegevens
 

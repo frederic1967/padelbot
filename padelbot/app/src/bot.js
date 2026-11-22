@@ -1,7 +1,7 @@
 // De logica van de padelbot, los van WhatsApp zelf (zodat ze getest kan worden).
 import crypto from 'node:crypto';
 import {
-  addDays, atOrAfter, daysBetween, formatDateNl, formatShortNl, localNow, nextMatchDate, planFor
+  addDays, addMonths, atOrAfter, daysBetween, formatDateNl, formatShortNl, localNow, nextMatchDate, planFor
 } from './schedule.js';
 import { applyVote, computeTeam, confirmText, describeChange, listNl, missingText } from './team.js';
 
@@ -15,7 +15,7 @@ export class Bot {
   /**
    * @param {object} deps
    * @param {import('./store.js').Store} deps.store
-   * @param {{tijdstip: string, tijdzone: string, laatste_herlading?: string}} deps.config
+   * @param {{tijdstip: string, tijdzone: string, laatste_herlading?: string, geldigheid_maanden?: number}} deps.config
    * @param {{sendText(t: string): Promise<void>, sendPoll(q: string, opts: string[]): Promise<{id: string, secret: string}>}} deps.wa
    * @param {(title: string, message: string) => Promise<void>} deps.notify
    * @param {() => Date} [deps.clock]
@@ -369,7 +369,7 @@ export class Bot {
   async checkTopup(now) {
     const last = this.config.laatste_herlading;
     if (!last || now.time < this.config.tijdstip) return;
-    const expiry = addDays(last, 365);
+    const expiry = addMonths(last, Number(this.config.geldigheid_maanden) || 9);
     const left = daysBetween(now.date, expiry);
     const sent = this.state.topup.sent;
     const due = TOPUP_THRESHOLDS.filter((t) => left <= t && !sent[`${expiry}:${t}`]);
@@ -379,9 +379,9 @@ export class Bot {
     const when = left > 0 ? `binnen ${left} dag${left === 1 ? '' : 'en'}` : 'nu';
     await this.notify(
       'Padelbot: eSIM herladen',
-      `Het botnummer moet ${when} herladen worden (laatste herlading: ${last}). ` +
-      'Herlaad met het kleinste bedrag in de Mobile Vikings-app en vul daarna de nieuwe datum in bij ' +
-      '"laatste_herlading" in de instellingen van de Padelbot-App.'
+      `Het botnummer moet ${when} herladen worden (laatste herlading: ${last}, nummer geldig tot ${expiry}). ` +
+      'Herlaad met het kleinste bedrag (bij DIGI: €5 via MyDIGI) en vul daarna de nieuwe datum in bij ' +
+      '"Laatste herlading eSIM" in de instellingen van de Padelbot-App.'
     );
   }
 }

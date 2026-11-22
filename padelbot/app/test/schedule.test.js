@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  addDays, atOrAfter, formatDateNl, localNow, matchDatesInMonth, nextMatchDate, planFor
+  addDays, addMonths, atOrAfter, formatDateNl, localNow, matchDatesInMonth, nextMatchDate, planFor
 } from '../src/schedule.js';
 
 test('1e en 3e woensdag van de maand', () => {
@@ -46,4 +46,10 @@ test('tijdvergelijking en dagen optellen', () => {
   assert.ok(atOrAfter({ date: '2026-11-24', time: '18:00' }, { date: '2026-11-24', time: '18:00' }));
   assert.ok(!atOrAfter({ date: '2026-11-24', time: '17:59' }, { date: '2026-11-24', time: '18:00' }));
   assert.equal(addDays('2026-12-30', 5), '2027-01-04');
+});
+
+test('maanden optellen (geldigheid eSIM)', () => {
+  assert.equal(addMonths('2026-11-22', 9), '2027-08-22');
+  assert.equal(addMonths('2026-05-31', 9), '2027-02-28'); // korte maand
+  assert.equal(addMonths('2026-03-20', 9), '2026-12-20');
 });

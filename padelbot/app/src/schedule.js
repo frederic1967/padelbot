@@ -24,6 +24,15 @@ export function addDays(dateStr, days) {
   return fromUtcDate(dt);
 }
 
+/** Tel maanden op; valt de dag weg (bv. 31 mei + 9 maanden), dan de laatste dag van die maand. */
+export function addMonths(dateStr, months) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const target = new Date(Date.UTC(y, m - 1 + months, 1));
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  target.setUTCDate(Math.min(d, lastDay));
+  return fromUtcDate(target);
+}
+
 /** De 1e en 3e woensdag van een maand (month: 1-12). */
 export function matchDatesInMonth(year, month) {
   const first = new Date(Date.UTC(year, month - 1, 1));
