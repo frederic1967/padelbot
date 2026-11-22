@@ -331,9 +331,52 @@ export class Bot {
       case 'historiek':
         return this.historyText();
       case 'help':
-        return HELP;
+        return this.config.testmodus ? `${HELP}\n\n${TEST_HELP}` : HELP;
+      case 'test':
+        if (this.config.testmodus) return this.handleTest(arg.toLowerCase(), match);
+        return `Onbekend commando. ${HELP}`;
       default:
         return `Onbekend commando. ${HELP}`;
+    }
+  }
+
+  /** Testcommando's: de stappen van de planning nu uitvoeren (alleen met "Test mode" aan). */
+  async handleTest(sub, match) {
+    const noMatch = 'Er is geen wedstrijd aangekondigd. Begin met !test aankondigen.';
+    switch (sub) {
+      case 'aankondigen': {
+        if (match) return `Er is al een wedstrijd aangekondigd (${formatDateNl(match.date)}). Gebruik eerst !test afsluiten.`;
+        let date = nextMatchDate(this.now().date);
+        while (this.state.matches[date]) date = nextMatchDate(addDays(date, 1)); // volgende vrije speeldag
+        await this.announce(date);
+        return null;
+      }
+      case 'woensdag':
+        if (!match) return noMatch;
+        match.flags.status = true;
+        this.store.save();
+        await this.sendStatus(match);
+        return null;
+      case 'donderdag':
+        if (!match) return noMatch;
+        match.flags.reminder = true;
+        this.store.save();
+        if (computeTeam(match).complete) return 'Test: het team is volledig, dus op donderdag komt er geen herinnering.';
+        await this.sendReminder(match);
+        return null;
+      case 'afsluiten': {
+        if (!match) return noMatch;
+        this.finalize(match);
+        return match.status === 'played'
+          ? `Test: de wedstrijd van ${formatDateNl(match.date)} is afgesloten en gespeeld door ${listNl(this.teamNames(match.team))}.`
+          : `Test: de wedstrijd van ${formatDateNl(match.date)} is afgesloten zonder 4 spelers en telt niet mee.`;
+      }
+      case 'wissen':
+        this.state.matches = {};
+        this.store.save();
+        return 'Test: alle wedstrijden en de historiek zijn gewist. De ledenlijst blijft behouden.';
+      default:
+        return TEST_HELP;
     }
   }
 
@@ -400,4 +443,13 @@ export const HELP = [
   '• !naam Jan – je naam in de berichten instellen',
   '• !historiek – alle vorige wedstrijden',
   '• !help – deze lijst'
+].join('\n');
+
+export const TEST_HELP = [
+  'Testcommando\'s (Test mode staat aan):',
+  '• !test aankondigen – aankondiging en peiling nu',
+  '• !test woensdag – bericht van woensdag nu',
+  '• !test donderdag – herinnering van donderdag nu',
+  '• !test afsluiten – wedstrijd nu afsluiten',
+  '• !test wissen – alle wedstrijden en historiek wissen'
 ].join('\n');

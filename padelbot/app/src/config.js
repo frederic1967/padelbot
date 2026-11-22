@@ -9,7 +9,8 @@ const DEFAULTS = {
   bot_telefoonnummer: '',
   laatste_herlading: '',
   geldigheid_maanden: 9, // DIGI prepaid: 9 maanden na activatie of laatste herlading
-  uitgebreide_log: false // ook de technische details van de WhatsApp-koppeling loggen
+  uitgebreide_log: false, // ook de technische details van de WhatsApp-koppeling loggen
+  testmodus: false // !test-commando's toelaten
 };
 
 export function loadConfig(file = process.env.PADELBOT_OPTIONS || '/data/options.json') {

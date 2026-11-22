@@ -23,3 +23,6 @@ configuration:
   uitgebreide_log:
     name: Detailed log
     description: Turn on to troubleshoot. Writes many technical details to the log; turn off again afterwards.
+  testmodus:
+    name: Test mode
+    description: Turn on to use the !test commands in the test group (run the schedule now). After testing, send !test wissen and turn it off again.

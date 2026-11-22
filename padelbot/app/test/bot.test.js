@@ -8,7 +8,7 @@ const hash = (s) => crypto.createHash('sha256').update(s).digest('hex');
 const silent = { info() {}, warn() {}, error() {} };
 
 /** Testopstelling: nep-WhatsApp, verstelbare klok (lokale tijd Brussel, winteruur). */
-function setup({ start = '2026-11-24T18:00', herlading = '' } = {}) {
+function setup({ start = '2026-11-24T18:00', herlading = '', testmodus = false } = {}) {
   const sent = [];
   const notes = [];
   let pollNr = 0;
@@ -19,7 +19,7 @@ function setup({ start = '2026-11-24T18:00', herlading = '' } = {}) {
   };
   const bot = new Bot({
     store: new Store(null),
-    config: { tijdstip: '18:00', tijdzone: 'Europe/Brussels', laatste_herlading: herlading },
+    config: { tijdstip: '18:00', tijdzone: 'Europe/Brussels', laatste_herlading: herlading, testmodus },
     wa,
     notify: async (t, m) => { notes.push(`${t}: ${m}`); },
     clock: () => now,
@@ -231,4 +231,51 @@ test('herinnering om de eSIM te herladen', async () => {
   await t.bot.tick();
   assert.equal(t.notes.length, 4);
   assert.match(t.notes[3], /nu herladen/);
+});
+
+test('testmodus: de planning meteen uitvoeren', async () => {
+  const off = setup({ start: '2026-11-22T16:00' });
+  await off.members(['Jan']);
+  assert.match(await off.cmd('Jan', '!test aankondigen'), /^Onbekend commando/);
+  assert.equal(off.bot.openMatch(), null, 'zonder testmodus gebeurt er niets');
+
+  const t = setup({ start: '2026-11-22T16:00', testmodus: true });
+  await t.members(['Jan', 'Els', 'Tom']);
+  assert.match(await t.cmd('Jan', '!help'), /!test aankondigen/);
+  assert.equal(await t.cmd('Jan', '!test woensdag'), 'Er is geen wedstrijd aangekondigd. Begin met !test aankondigen.');
+
+  assert.equal(await t.cmd('Jan', '!test aankondigen'), null);
+  const [announce, poll] = t.take();
+  assert.match(announce, /woensdag 2 december/);
+  assert.match(poll, /^POLL Kan jij spelen op woensdag 2 december\?/);
+  assert.match(await t.cmd('Jan', '!test aankondigen'), /Er is al een wedstrijd aangekondigd/);
+
+  await t.vote('Jan', true);
+  await t.vote('Els', true);
+  await t.cmd('Jan', '!test woensdag');
+  assert.match(t.take()[0], /^⚠️ Voor woensdag 2 december ontbreken nog 2 spelers/);
+  await t.cmd('Jan', '!test donderdag');
+  assert.match(t.take()[0], /^⏰ Herinnering/);
+
+  await t.vote('Tom', true);
+  await t.cmd('Jan', '!gast Marc');
+  t.take();
+  assert.equal(await t.cmd('Jan', '!test afsluiten'),
+    'Test: de wedstrijd van woensdag 2 december is afgesloten en gespeeld door Jan, Els, Tom en Marc (gast).');
+
+  // Tweede ronde: volgende vrije speeldag, met het overzicht van de vorige wedstrijd
+  await t.cmd('Jan', '!test aankondigen');
+  assert.match(t.take()[0], /woensdag 16 december[\s\S]*vorige wedstrijd\):\n• Els: 1\n• Jan: 1\n• Tom: 1/);
+
+  // De echte planning stuurt geen dubbele berichten zolang de testwedstrijd open staat
+  t.at('2026-11-24T18:00');
+  await t.bot.tick();
+  assert.equal(t.take().length, 0);
+
+  assert.equal(await t.cmd('Jan', '!test wissen'), 'Test: alle wedstrijden en de historiek zijn gewist. De ledenlijst blijft behouden.');
+  assert.equal(t.bot.openMatch(), null);
+  assert.equal(t.bot.activeMembers().length, 3);
+  // Na het wissen kondigt de echte planning gewoon aan
+  await t.bot.tick();
+  assert.match(t.take()[0], /woensdag 2 december/);
 });

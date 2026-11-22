@@ -45,6 +45,21 @@ De Padelbot organiseert de padelwedstrijden van jullie WhatsApp-groep. We spelen
      WhatsApp invult via **Koppelen met telefoonnummer**.
 5. De statuspagina toont "verbonden" en de naam van de groep. Klaar.
 
+## Testen
+
+Zet bij **Configuration** de optie **Test mode** aan en herstart de App. In de testgroep werken
+dan extra commando's om de planning meteen uit te voeren:
+
+| Commando | Wat het doet |
+|---|---|
+| `!test aankondigen` | Aankondiging en peiling nu, voor de volgende vrije speeldag |
+| `!test woensdag` | Het bericht van woensdag nu |
+| `!test donderdag` | De herinnering van donderdag nu |
+| `!test afsluiten` | De wedstrijd nu afsluiten (komt in de historiek) |
+| `!test wissen` | Alle wedstrijden en de historiek wissen; de ledenlijst blijft |
+
+Na het testen: stuur `!test wissen`, zet **Test mode** weer uit en herstart de App.
+
 ## Meldingen voor de beheerder
 
 De bot waarschuwt je als de WhatsApp-koppeling verbroken is, en wanneer de eSIM herladen moet

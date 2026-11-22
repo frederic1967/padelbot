@@ -1,5 +1,5 @@
 name: "Padelbot"
-version: "0.1.2"
+version: "0.1.3"
 slug: "padelbot"
 description: "WhatsApp-assistent voor de padelgroep: aankondiging, peiling, team en historiek"
 url: "https://github.com/frederic1967/padelbot"
@@ -21,6 +21,7 @@ options:
   melding_service: "persistent_notification.create"
   geldigheid_maanden: 9
   uitgebreide_log: false
+  testmodus: false
 schema:
   groep_naam: str
   tijdstip: "match(^([01][0-9]|2[0-3]):[0-5][0-9]$)"
@@ -30,3 +31,4 @@ schema:
   laatste_herlading: "match(^[0-9]{4}-[0-9]{2}-[0-9]{2}$)?"
   geldigheid_maanden: "int(1,24)"
   uitgebreide_log: bool
+  testmodus: bool

@@ -27,3 +27,6 @@ configuration:
   uitgebreide_log:
     name: Uitgebreide log
     description: Zet aan om problemen op te sporen. Schrijft veel technische details in de log; zet daarna weer uit.
+  testmodus:
+    name: Testmodus
+    description: Zet aan om in de testgroep de !test-commando's te gebruiken (planning nu uitvoeren). Na het testen !test wissen en weer uitzetten.

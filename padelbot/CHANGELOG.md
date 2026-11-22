@@ -1,5 +1,10 @@
 # Wijzigingen
 
+## 0.1.3
+
+- Testmodus (instelling "Test mode"): met !test aankondigen, !test woensdag, !test donderdag,
+  !test afsluiten en !test wissen voer je de planning meteen uit om te testen.
+
 ## 0.1.2
 
 - Diagnose: elk binnenkomend bericht, elk commando en elk antwoord komt kort in de log
