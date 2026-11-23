@@ -52,7 +52,7 @@ const wa = new WhatsApp({
 
 bot = new Bot({ store, config, wa, notify, log });
 
-startWeb({ wa, bot, config, log });
+startWeb({ wa, bot, config, log, run: serial });
 
 if (!config.groep_naam) log.warn('Vul de naam van de WhatsApp-groep in bij de instellingen van de App.');
 log.info(`Padelbot gestart (berichten om ${config.tijdstip}, tijdzone ${config.tijdzone})`);

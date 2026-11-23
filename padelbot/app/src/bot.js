@@ -66,6 +66,30 @@ export class Bot {
     return Object.keys(this.state.people).filter((pid) => this.state.people[pid].active);
   }
 
+  /** Leden voor de statuspagina: telefoonnummer, ingestelde naam en profielnaam. */
+  memberList() {
+    return this.activeMembers()
+      .map((pid) => {
+        const p = this.state.people[pid];
+        const pn = p.ids.find((id) => id.endsWith('@s.whatsapp.net'));
+        return { pid, phone: pn ? formatPhone(pn.split('@')[0]) : null, customName: p.customName || '', profileName: p.name || '' };
+      })
+      .sort((a, b) => (a.customName || a.profileName || a.phone || '~').localeCompare(b.customName || b.profileName || b.phone || '~', 'nl'));
+  }
+
+  /** Namen instellen vanaf de statuspagina; een leeg veld wist de ingestelde naam. */
+  setNames(namesByPid) {
+    let changed = 0;
+    for (const [pid, raw] of Object.entries(namesByPid)) {
+      const p = this.state.people[pid];
+      if (!p) continue;
+      const name = cleanName(raw) || null;
+      if ((p.customName || null) !== name) { p.customName = name; changed += 1; }
+    }
+    this.store.save();
+    return changed;
+  }
+
   /**
    * Synchroniseer de ledenlijst met de groep.
    * @param {{ids: string[], name?: string}[]} participants (zonder de bot zelf)
@@ -490,6 +514,14 @@ export class Bot {
       '"Laatste herlading eSIM" in de instellingen van de Padelbot-App.'
     );
   }
+}
+
+/** "32470123456" → "+32 470 12 34 56" (Belgisch); andere landen: "+" en de cijfers. */
+export function formatPhone(digits) {
+  if (/^32\d{9}$/.test(digits)) {
+    return `+32 ${digits.slice(2, 5)} ${digits.slice(5, 7)} ${digits.slice(7, 9)} ${digits.slice(9, 11)}`;
+  }
+  return `+${digits}`;
 }
 
 function cleanName(s) {

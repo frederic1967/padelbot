@@ -60,6 +60,13 @@ dan extra commando's om de planning meteen uit te voeren:
 
 Na het testen: stuur `!test wissen`, zet **Test mode** weer uit en herstart de App.
 
+## Namen van de leden
+
+Open de statuspagina (**Padelbot** in de zijbalk). Onder **Leden van de groep** staat elk lid
+met zijn telefoonnummer en een vakje. Vul de voornaam in en klik op **Opslaan**. Laat je een
+vakje leeg, dan gebruikt Paddy de WhatsApp-profielnaam van die persoon zodra die iets stuurt of
+stemt. Leden kunnen hun eigen naam ook aanpassen met `!naam`.
+
 ## Meldingen voor de beheerder
 
 De bot waarschuwt je als de WhatsApp-koppeling verbroken is, en wanneer de eSIM herladen moet

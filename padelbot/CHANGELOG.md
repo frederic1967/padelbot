@@ -1,5 +1,11 @@
 # Wijzigingen
 
+## 0.1.6
+
+- Statuspagina: blok "Leden van de groep" met telefoonnummer en een vakje per lid om de
+  voornaam in te stellen. Niemand in de groep merkt er iets van.
+- De statuspagina ververst niet meer automatisch zolang de bot verbonden is.
+
 ## 0.1.5
 
 - Aankondiging op maandag, 9 dagen vooraf (was dinsdag).
