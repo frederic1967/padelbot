@@ -72,3 +72,27 @@ test('statuspagina: ledenlijst en opslaan via het formulier', async () => {
     server.close();
   }
 });
+
+test('statuspagina: stand aanpassen bij een lopende wedstrijd', async () => {
+  const bot = makeBot();
+  await bot.syncMembers([{ ids: ['a@lid'] }, { ids: ['b@lid'] }]);
+  bot.setNames({ 'a@lid': 'Jan', 'b@lid': 'Els' });
+  bot.state.matches['2026-12-02'] = { date: '2026-12-02', status: 'open', poll: { id: 'p', secret: 'ab' }, yesOrder: ['a@lid'], guests: [], votes: { 'a@lid': 'yes' }, flags: {}, team: null };
+  const wa = { status: { connection: 'verbonden', me: '+32487000000', group: 'Padel', error: null } };
+  const server = startWeb({ port: 0, wa, bot, config: { groep_naam: 'Padel', tijdstip: '18:00' }, log: silent });
+  await new Promise((r) => server.once('listening', r));
+  const url = `http://127.0.0.1:${server.address().port}/`;
+  try {
+    const page = await (await fetch(url)).text();
+    assert.match(page, /Stand aanpassen/);
+    assert.match(page, /<option value="yes" selected>✅ Kan spelen/);
+    const body = new URLSearchParams({ 'stem:a@lid': 'no', 'stem:b@lid': 'yes' });
+    const saved = await (await fetch(url, { method: 'POST', body })).text();
+    assert.match(saved, /Stand aangepast/);
+    assert.doesNotMatch(saved, /Namen opgeslagen/);
+    assert.deepEqual(bot.openMatch().yesOrder, ['b@lid']);
+    assert.equal(bot.displayName('a@lid'), 'Jan', 'namen blijven ongewijzigd');
+  } finally {
+    server.close();
+  }
+});

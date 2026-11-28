@@ -365,3 +365,30 @@ test('oude wedstrijd zonder "votes" en "eve" (van vóór 0.1.5) blijft werken', 
   await t.vote('Els', false);
   assert.deepEqual(t.take(), ['❌ Els kan niet']);
 });
+
+test('stand aanpassen via de statuspagina: geen bericht, herhaling en historiek kloppen', async () => {
+  const t = setup();
+  await t.members(['Jan', 'Els', 'Tom', 'Piet', 'An']);
+  await t.bot.tick();
+  for (const n of ['Jan', 'Els', 'Tom', 'Piet', 'An']) await t.vote(n, true);
+  t.take();
+  // Els meldde zich af buiten de peiling; An (1e reserve) valt in
+  assert.equal(t.bot.setVotesAdmin({ [t.pid('Els')]: 'no', [t.pid('Jan')]: 'yes' }), 1);
+  assert.equal(t.take().length, 0, 'geen bericht in de groep');
+  assert.match(await t.cmd('Tom', '!status'), /✅ Speelt: Jan, Tom, Piet en An\n🔁 Reserve: –\n❌ Kan niet: Els/);
+  // Geen antwoord = uit de peiling
+  t.bot.setVotesAdmin({ [t.pid('Piet')]: '' });
+  assert.match(await t.cmd('Tom', '!status'), /nog 1 nodig[\s\S]*❓ Nog niet geantwoord: Piet/);
+  t.bot.setVotesAdmin({ [t.pid('Piet')]: 'yes' });
+  t.take();
+
+  t.at('2026-12-01T18:00');
+  await t.bot.tick();
+  assert.deepEqual(t.take(), ['🎾 Morgen padel! Op woensdag 2 december spelen: Jan, Tom, An en Piet.']);
+  t.at('2026-12-02T23:00');
+  await t.bot.tick();
+  const m = t.bot.state.matches['2026-12-02'];
+  assert.equal(m.status, 'played');
+  assert.deepEqual(m.team.members.map((p) => t.bot.displayName(p)), ['Jan', 'Tom', 'An', 'Piet']);
+  assert.equal(t.bot.setVotesAdmin({ [t.pid('Jan')]: 'no' }), 0, 'zonder lopende wedstrijd verandert er niets');
+});

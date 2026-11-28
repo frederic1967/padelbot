@@ -60,6 +60,13 @@ dan extra commando's om de planning meteen uit te voeren:
 
 Na het testen: stuur `!test wissen`, zet **Test mode** weer uit en herstart de App.
 
+## Stand aanpassen
+
+Meldde iemand zich af buiten de peiling? Open de statuspagina (**Padelbot** in de zijbalk) en
+zet die persoon onder **Stand aanpassen** op **❌ Kan niet**. Klik **Stand opslaan**. De eerste
+reserve schuift door. Er komt geen bericht in de groep; de herhaling van de dag ervoor en de
+historiek gebruiken de aangepaste stand.
+
 ## Namen van de leden
 
 Open de statuspagina (**Padelbot** in de zijbalk). Onder **Leden van de groep** staat elk lid

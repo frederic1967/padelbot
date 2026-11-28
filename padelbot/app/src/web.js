@@ -17,10 +17,19 @@ export function startWeb({ port = 8099, wa, bot, config, log, run = (fn) => Prom
       if (req.method === 'POST') {
         const form = new URLSearchParams(await readBody(req));
         const names = {};
-        for (const [key, value] of form) if (key.startsWith('naam:')) names[key.slice(5)] = value;
-        await run(() => bot.setNames(names));
-        notice = '✅ Namen opgeslagen.';
-        log.info('Namen van de leden bijgewerkt via de statuspagina');
+        const votes = {};
+        for (const [key, value] of form) {
+          if (key.startsWith('naam:')) names[key.slice(5)] = value;
+          if (key.startsWith('stem:')) votes[key.slice(5)] = value;
+        }
+        if (Object.keys(votes).length) {
+          await run(() => bot.setVotesAdmin(votes));
+          notice = '✅ Stand aangepast.';
+        } else {
+          await run(() => bot.setNames(names));
+          notice = '✅ Namen opgeslagen.';
+          log.info('Namen van de leden bijgewerkt via de statuspagina');
+        }
       }
       const html = await renderPage({ wa, bot, config, notice });
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -45,6 +54,32 @@ function readBody(req) {
     req.on('end', () => resolve(data));
     req.on('error', reject);
   });
+}
+
+/** Stand van de lopende wedstrijd aanpassen: per lid "kan spelen", "kan niet" of "geen antwoord". */
+function votesForm(bot, match, notice) {
+  const team = computeTeam(match);
+  const role = (pid) => (team.members.includes(pid) ? 'speelt'
+    : team.reserves.includes(pid) ? `${team.reserves.indexOf(pid) + 1}e reserve` : '');
+  const option = (value, label, current) => `<option value="${value}"${value === current ? ' selected' : ''}>${label}</option>`;
+  const rows = bot.activeMembers()
+    .map((pid) => ({ pid, name: bot.displayName(pid) }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'nl'))
+    .map(({ pid, name }) => {
+      const current = bot.currentVote(match, pid);
+      return `
+    <tr>
+      <td>${esc(name)}${role(pid) ? `<br><small>${esc(role(pid))}</small>` : ''}</td>
+      <td><select name="stem:${esc(pid)}">${option('yes', '✅ Kan spelen', current)}${option('no', '❌ Kan niet', current)}${option('', '– Geen antwoord', current)}</select></td>
+    </tr>`;
+    }).join('');
+  return `<h2>Stand aanpassen</h2>
+<p>Meldde iemand zich af buiten de peiling? Zet die persoon op <b>❌ Kan niet</b>: de eerste reserve schuift dan door. Er komt geen bericht in de groep.</p>
+${notice ? `<p class="ok">${esc(notice)}</p>` : ''}
+<form method="post">
+<table>${rows}</table>
+<button type="submit">Stand opslaan</button>
+</form>`;
 }
 
 /** Ledenlijst met een invulvakje per lid, om de namen in te stellen. */
@@ -100,10 +135,11 @@ async function renderPage({ wa, bot, config, notice = '' }) {
         `<b>Team:</b> ${names.length ? esc(listNl(names)) : 'nog niemand'}${team.complete ? ' ✅' : ` (nog ${team.missing} nodig)`}<br>` +
         `<b>Reserves:</b> ${team.reserves.length ? esc(listNl(team.reserves.map((p) => bot.displayName(p)))) : '–'}</p>`
       );
+      parts.push(votesForm(bot, match, notice.startsWith('✅ Stand') ? notice : ''));
     } else {
       parts.push('<p>Er is nu geen wedstrijd aangekondigd. De volgende aankondiging volgt op de maandag, 9 dagen voor de speeldag, om ' + esc(config.tijdstip) + '.</p>');
     }
-    if (s.group) parts.push(membersForm(bot, notice));
+    if (s.group) parts.push(membersForm(bot, notice.startsWith('✅ Namen') ? notice : ''));
   }
   if (s.error) parts.push(`<p class="err"><b>Let op:</b> ${esc(s.error)}</p>`);
 
@@ -116,7 +152,7 @@ body{font-family:system-ui,sans-serif;max-width:640px;margin:24px auto;padding:0
 h1{font-size:1.4rem}.err{color:#b42318}.code{font-size:2rem;letter-spacing:.2em;font-weight:700}
 img{border:1px solid #ddd;border-radius:8px}.ok{color:#067647;font-weight:600}
 table{border-collapse:collapse;width:100%}td{padding:6px 4px;border-bottom:1px solid #e5e7eb;vertical-align:middle}
-small{color:#6b7280}input{font-size:1rem;padding:6px 8px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:6px}
+small{color:#6b7280}select{font-size:1rem;padding:6px 8px;border:1px solid #cbd5e1;border-radius:6px;background:#fff}input{font-size:1rem;padding:6px 8px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:6px}
 button{margin-top:12px;font-size:1rem;padding:8px 18px;border:0;border-radius:6px;background:#0B7A63;color:#fff;cursor:pointer}
 </style></head><body><h1>🎾 Padelbot</h1>${parts.join('\n')}</body></html>`;
 }

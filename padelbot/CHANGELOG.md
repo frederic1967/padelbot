@@ -1,5 +1,11 @@
 # Wijzigingen
 
+## 0.1.7
+
+- Statuspagina: blok "Stand aanpassen" om per lid "Kan spelen", "Kan niet" of "Geen antwoord"
+  in te stellen voor de lopende wedstrijd, bv. als iemand zich buiten de peiling afmeldde.
+  Er komt geen bericht in de groep; de herhaling en de historiek gebruiken de aangepaste stand.
+
 ## 0.1.6
 
 - Statuspagina: blok "Leden van de groep" met telefoonnummer en een vakje per lid om de

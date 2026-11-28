@@ -77,6 +77,35 @@ export class Bot {
       .sort((a, b) => (a.customName || a.profileName || a.phone || '~').localeCompare(b.customName || b.profileName || b.phone || '~', 'nl'));
   }
 
+  /** Huidige stem van een lid voor de lopende wedstrijd: 'yes', 'no' of '' (geen antwoord). */
+  currentVote(match, pid) {
+    return (match.votes || {})[pid] || (match.yesOrder.includes(pid) ? 'yes' : '');
+  }
+
+  /**
+   * Stemmen aanpassen vanaf de statuspagina (bv. iemand meldde zich buiten de peiling af).
+   * Werkt zoals een stem in de peiling, maar zonder bericht in de groep.
+   * @param {Record<string, 'yes'|'no'|''>} votesByPid
+   */
+  setVotesAdmin(votesByPid) {
+    const match = this.openMatch();
+    if (!match) return 0;
+    match.votes = match.votes || {};
+    let changed = 0;
+    for (const [pid, raw] of Object.entries(votesByPid)) {
+      if (!this.state.people[pid]) continue;
+      const vote = raw === 'yes' || raw === 'no' ? raw : '';
+      if (this.currentVote(match, pid) === vote) continue;
+      match.yesOrder = applyVote(match.yesOrder, pid, vote === 'yes');
+      if (vote) match.votes[pid] = vote;
+      else delete match.votes[pid];
+      changed += 1;
+    }
+    this.store.save();
+    if (changed) this.log.info(`Stand van ${match.date} aangepast via de statuspagina (${changed} wijziging(en))`);
+    return changed;
+  }
+
   /** Namen instellen vanaf de statuspagina; een leeg veld wist de ingestelde naam. */
   setNames(namesByPid) {
     let changed = 0;
